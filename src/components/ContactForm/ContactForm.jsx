@@ -3,6 +3,7 @@ import PropTypes from "prop-types";
 
 import { connect } from "react-redux";
 import phonebookActions from "../../redux/phonebook/phonebookActions";
+import Alert from "../Alert";
 
 import styles from "./ContactForm.module.css";
 
@@ -15,12 +16,12 @@ class ContactForm extends Component {
   state = {
     name: "",
     number: "",
+    txtMsg: "",
   };
 
   //1 ввожу данные в поле инпут и меняю поле name/number в state
   handleChange = e => {
     const field = e.target.dataset.row;
-    // const { onAddContact } = this.props;
     this.setState({
       [field]: e.target.value, //данные введеные в поле инпут
     });
@@ -28,7 +29,21 @@ class ContactForm extends Component {
   //2при нажатии на кнопку add contact снова меняем state только св-во contacts (массив обьектов {name,id})
   handleSubmit = e => {
     e.preventDefault();
-    this.props.onAddContact(this.state.name, this.state.number);
+    const contacts = this.props.storeContacts;
+
+    if (
+      contacts.find(
+        contact => contact.name.toLowerCase() === this.state.name.toLowerCase(),
+      )
+    ) {
+      this.setState({ txtMsg: "Contact is dublication!" });
+      setTimeout(() => this.setState({ txtMsg: "" }), 3000);
+    } else if (!this.state.name || !this.state.number) {
+      this.setState({ txtMsg: "Contact is EMPTY!" });
+      setTimeout(() => this.setState({ txtMsg: "" }), 3000);
+    } else {
+      this.props.onAddContact(this.state.name, this.state.number);
+    }
 
     this.setState({
       name: "",
@@ -37,38 +52,45 @@ class ContactForm extends Component {
   };
 
   render() {
-    const { name, number } = this.state;
+    const { name, number, txtMsg } = this.state;
     return (
-      <form className={styles.TaskEditor} onSubmit={this.handleSubmit}>
-        <label className={styles.TaskEditorLabel}>
-          Name
-          <input
-            className={styles.TaskEditorInput}
-            type="text"
-            value={name}
-            onChange={this.handleChange}
-            data-row="name"
-          />
-        </label>
-        <label className={styles.TaskEditorLabel}>
-          Number
-          <input
-            className={styles.TaskEditorInput}
-            type="text"
-            value={number}
-            onChange={this.handleChange}
-            data-row="number"
-          />
-        </label>
+      <>
+        <Alert onShow={txtMsg} />
+        <form className={styles.TaskEditor} onSubmit={this.handleSubmit}>
+          <label className={styles.TaskEditorLabel}>
+            Name
+            <input
+              className={styles.TaskEditorInput}
+              type="text"
+              value={name}
+              onChange={this.handleChange}
+              data-row="name"
+            />
+          </label>
+          <label className={styles.TaskEditorLabel}>
+            Number
+            <input
+              className={styles.TaskEditorInput}
+              type="text"
+              value={number}
+              onChange={this.handleChange}
+              data-row="number"
+            />
+          </label>
 
-        <button type="submit" className={styles.TaskEditorButton}>
-          Add contact
-        </button>
-      </form>
+          <button type="submit" className={styles.TaskEditorButton}>
+            Add contact
+          </button>
+        </form>
+      </>
     );
   }
 }
+const mapStateToprops = state => ({
+  storeContacts: state.contacts.items,
+});
+
 const mapDispatchToprops = {
   onAddContact: phonebookActions.addContact,
 };
-export default connect(null, mapDispatchToprops)(ContactForm);
+export default connect(mapStateToprops, mapDispatchToprops)(ContactForm);
